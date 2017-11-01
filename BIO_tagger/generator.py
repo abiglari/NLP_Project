@@ -1,12 +1,13 @@
 from os import walk
 import nltk
+import pickle
 from fileReader import fileReader
 from tokenizers import sent_splitter
 
 
 def main():
     trainFiles = []
-    trainDirPath = "developset/texts/"
+    trainDirPath = "data/train/texts/"
     for (dirpath, dirnames, filenames) in walk(trainDirPath):
         trainFiles+=filenames
         break
@@ -25,7 +26,8 @@ def main():
             taggedWords = nltk.pos_tag(words)
             sentsTagWords += [taggedWords]
         docSentsTagWords += [sentsTagWords]
-
+    with open('POStags.pickle', 'w') as f:
+        pickle.dump([IDs, docSentsTagWords], f)
     return
 if __name__ == '__main__':
     main()
