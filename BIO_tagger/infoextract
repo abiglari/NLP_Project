@@ -2,45 +2,45 @@ echo "Setting up the dependencies..."
 echo "Setting up pip for the correct version of python..."
 python get-pip.py
 echo "Installing nltk"
-pip install -U nltk
+pip install --user nltk
 echo "Installing numpy ..."
-pip install -U numpy
+pip install --user numpy
 echo "Getting required nltk packages..."
-python -m nltk.downloader -d /usr/share/nltk_data punkt
-python -m nltk.downloader -d /usr/share/nltk_data averaged_perceptron_tagger
+python -m nltk.downloader punkt
+python -m nltk.downloader averaged_perceptron_tagger
 echo "Running generator1.py ..." 
 python generator1.py $1
 echo "Building liblinear-1.93 toolkit..."
 cd liblinear-1.93
 make
 echo "Training a classifier to detect incident types..."
-train -s 2 -e 0.0001 -c 0.1 -q ../docWordVecs_tr.txt SVMPrimerClassifier
+./train -s 2 -e 0.0001 -c 0.1 -q ../docWordVecs_tr.txt SVMPrimerClassifier
 echo "Predicting the incident types of the documents in the file" $1 "..."
-predict ../docWordVecs_tst.txt SVMPrimerClassifier ../predIncidents.txt > acc.txt
+./predict ../docWordVecs_tst.txt SVMPrimerClassifier ../predIncidents.txt > acc.txt
 cd ../
 echo "Running generator2.py ..." 
 python generator2.py
 cd liblinear-1.93
 echo "Training a classifier to detect WEAPON BIO tags (This may take a few minutes)..."
-train -s 2 -e 0.0001  -c 1 -q ../W_BIO_vectors_tr.txt W_SVMPrimerClassifier
+./train -s 2 -e 0.0001  -c 1 -q ../W_BIO_vectors_tr.txt W_SVMPrimerClassifier
 echo "Training a classifier to detect PERP INDIV BIO tags (This may take a few minutes)..."
-train -s 2 -e 0.0001  -c 1 -q ../PI_BIO_vectors_tr.txt PI_SVMPrimerClassifier
+./train -s 2 -e 0.0001  -c 1 -q ../PI_BIO_vectors_tr.txt PI_SVMPrimerClassifier
 echo "Training a classifier to detect PERP ORG BIO tags (This may take a few minutes)..."
-train -s 2 -e 0.0001  -c 1 -q ../PO_BIO_vectors_tr.txt PO_SVMPrimerClassifier
+./train -s 2 -e 0.0001  -c 1 -q ../PO_BIO_vectors_tr.txt PO_SVMPrimerClassifier
 echo "Training a classifier to detect TARGET BIO tags (This may take a few minutes)..."
-train -s 2 -e 0.0001  -c 1 -q ../T_BIO_vectors_tr.txt T_SVMPrimerClassifier
+./train -s 2 -e 0.0001  -c 1 -q ../T_BIO_vectors_tr.txt T_SVMPrimerClassifier
 echo "Training a classifier to detect VICTIM BIO tags (This may take a few minutes)..."
-train -s 2 -e 0.0001  -c 1 -q ../V_BIO_vectors_tr.txt V_SVMPrimerClassifier
+./train -s 2 -e 0.0001  -c 1 -q ../V_BIO_vectors_tr.txt V_SVMPrimerClassifier
 echo "Predicting WEAPON BIO tags in the documents of the file" $1 "..."
-predict ../W_BIO_vectors_tst.txt W_SVMPrimerClassifier ../predWs.txt > acc.txt
+./predict ../W_BIO_vectors_tst.txt W_SVMPrimerClassifier ../predWs.txt > acc.txt
 echo "Predicting PERP INDIV BIO tags in the documents of the file" $1 "..."
-predict ../PI_BIO_vectors_tst.txt PI_SVMPrimerClassifier ../predPIs.txt > acc.txt
+./predict ../PI_BIO_vectors_tst.txt PI_SVMPrimerClassifier ../predPIs.txt > acc.txt
 echo "Predicting PERP ORG BIO tags in the documents of the file" $1 "..."
-predict ../PO_BIO_vectors_tst.txt PO_SVMPrimerClassifier ../predPOs.txt > acc.txt
+./predict ../PO_BIO_vectors_tst.txt PO_SVMPrimerClassifier ../predPOs.txt > acc.txt
 echo "Predicting TARGET BIO tags in the documents of the file" $1 "..."
-predict ../T_BIO_vectors_tst.txt T_SVMPrimerClassifier ../predTs.txt > acc.txt
+./predict ../T_BIO_vectors_tst.txt T_SVMPrimerClassifier ../predTs.txt > acc.txt
 echo "Predicting VICTIM BIO tags in the documents of the file" $1 "..."
-predict ../V_BIO_vectors_tst.txt V_SVMPrimerClassifier ../predVs.txt > acc.txt
+./predict ../V_BIO_vectors_tst.txt V_SVMPrimerClassifier ../predVs.txt > acc.txt
 cd ../
 echo "Running generator3.py ..." 
 python generator3.py $1
