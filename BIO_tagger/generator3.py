@@ -23,7 +23,8 @@ def main():
     predAns = []
     predInd = 0
     for docInd, doc in enumerate(docSentsTagWords_tst):
-        thisDocDict = dict(zip(roles, [[] for i in range(len(roles))]))
+#        thisDocDict = dict(zip(roles, [[] for i in range(len(roles))]))
+        thisDocDict = dict(zip(roles, [dict() for i in range(len(roles))]))
         thisDocDict['ID'] = IDs_tst[docInd]
         thisDocDict['INCIDENT'] = predIncLs[docInd]
         for sent in doc:
@@ -50,7 +51,10 @@ def main():
                             elif ')' in newEnt and '(' not in newEnt:
                                 newEnt = newEnt.replace(')', '')
                             if newEnt not in thisDocDict[role]:
-                                thisDocDict[role] += [newEnt]
+#                                thisDocDict[role] += [newEnt]
+                                thisDocDict[role][newEnt] = 1
+                            else:
+                                thisDocDict[role][newEnt] += 1
                             tmp = [word]
                     else:
                         if tmp:
@@ -65,7 +69,10 @@ def main():
                             elif ')' in newEnt and '(' not in newEnt:
                                 newEnt = newEnt.replace(')', '')                                
                             if newEnt not in thisDocDict[role]:
-                                thisDocDict[role] += [newEnt]
+#                                thisDocDict[role] += [newEnt]
+                                thisDocDict[role][newEnt] = 1
+                            else:
+                                thisDocDict[role][newEnt] += 1
                             tmp = []
                     ind += 1
             predInd = ind
@@ -83,15 +90,24 @@ def main():
         #writing WEAPON, PERP INDIV, PERP ORG, TARGET, VICTIM
         notAnsList = ['THE', 'THIS', 'THAT', 'A', 'I', 'HE', 'SHE', 'THEY', 'WE', 'YOU', 'ME', 'HIM', 'HER', 'THEM', 'MY'\
         'HIS', 'HER', 'YOUR', 'THEIR', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN',\
-        '1ST', '2ND', '3RD', 'MAN', 'MORE' ]
+        '1ST', '2ND', '3RD', 'MAN', 'MORE', 'MEMBER', 'MEMBER OF', 'MEMBERS OF', 'MEMBERS', 'GOVERNMENT' ]
         for role in roles:
             fOut.write(role+':')
             for i in range(16-len(role)-1):
                 fOut.write(' ')
+            tmpDict = dict(doc[role])
+            for ent in tmpDict:
+                if ent.upper() in notAnsList:
+                    del doc[role][ent]
             if not doc[role]:
                 fOut.write('-\n')
             else:
-                ents = doc[role]
+                ents=[]
+                maxScr = max(doc[role].values())
+                for ent in doc[role]:
+                    if doc[role][ent]==maxScr:
+                        ents+=[ent]
+#                ents = doc[role]
                 indEnt=0
                 nEnt = len(ents)
                 while (indEnt<nEnt and (ents[indEnt].upper() in notAnsList or len(ents[indEnt])<=2 )):
