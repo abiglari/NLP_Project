@@ -11,15 +11,12 @@ external resources:
 
 (b)
 You can run this in 2 ways (different in running time, but the same result)
-1) To run everithing including the training of the classifiers with (This takes about 25min):
+1) To run everything including the training of the classifiers (This takes about 3min):
    ./infoextract input-file-name
-2) To run everything except training the classifiers (this uses my pre-trained classifiers and takes about 4min):
+2) To run everything except training the classifiers (this uses my pre-trained classifiers and takes about 2min):
    ./infoextract_fast input-file-name
 
 (c)
 1) Team member: Amir Biglari 
    This is all my individual work and I received minor help from the other team member. 
-2) Teammember: Wei Zhao
-   He did not have any contribution for this work. He was supposed to creat an IE program using case frames. 
-   He just gave me a single python script (about 100 lines) at the day of submission and did not show up. I could not run his script
-   and he was not there to explain. So, I had to stick with my approach and submit only my work!
+2) My team-mate decided to work on his own and submit as a separate team.
