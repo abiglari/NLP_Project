@@ -237,9 +237,490 @@ def doc2FtVec(tagWordsBIODict, features, featureIdDict, incLs,  possIncLs, roleT
         nIns = len(vecs)
         nNonNeg = len(nonNegVecs)
         nShort = max(0, nIns - 2* nNonNeg)
+        nShort=0
         if nNonNeg!=0:
             for i in range(nShort):
                 vecs+= [nonNegVecs[i%nNonNeg]]
+        nIns = len(vecs)
+        inds = numpy.random.permutation(nIns)
+        for ind, i in enumerate(inds):
+            vec = vecs[i]
+            fOut.write(str(vec[0]))
+            for id in vec[1:]:
+                fOut.write(' '+str(id)+':1')
+            if ind!= nIns-1:
+                fOut.write('\n')
+    fOut.close()    
+    return
+    
+    
+def doc2FtVec_multi(tagWordsBIO, features, featureIdDict, incLs,  possIncLs, roleTags, isTrain=True, WBParts=[], WIParts=[], TBParts=[], TIParts=[]):
+
+    if isTrain:
+        fOut = open("BIO_vectors_tr.txt","w")
+    else:
+        fOut = open("BIO_vectors_tst.txt","w")
+    labelIdDict = {'O':0}
+    id=1
+    for t in roleTags:
+        Btag = 'B-'+t
+        labelIdDict[Btag]=id
+        id+=1
+        Itag = 'I-'+t
+        labelIdDict[Itag]=id
+        id+=1
+    
+    nDocs = len(tagWordsBIO)
+    if isTrain:
+        vecs = []
+        nonNegVecs = []
+    for docInd, doc in enumerate(tagWordsBIO):
+        nSents = len(doc)
+        for sentInd, sent in enumerate(doc):
+            nWords = len(sent)
+            for i, wPOSLab in enumerate(sent):
+                if isTrain:
+                    isNonNeg = False
+                    tmpVec = []
+                    labels = wPOSLab[2]
+#                    fOut.write(str(labelIdDict[labels[0]]))
+                    tmpVec += [labelIdDict[labels[0]]]
+                    if labels[0]!='O':
+                        isNonNeg = True
+                else:
+                    fOut.write('0')
+                pos  = wPOSLab[1]
+                word = wPOSLab[0]
+                
+                idList=[]
+                #WORD
+                ft = 'word-'+word
+                if ft in featureIdDict:
+                    idList += [featureIdDict[ft]]
+                else:
+                    idList += [featureIdDict['word-UNK']]
+                #WORDCON
+                if features['WORDCON']:
+                    if i==0:
+                        idList += [featureIdDict['prev-word-PHI']]
+                    else:
+                        ft = 'prev-word-'+sent[i-1][0]
+                        if ft in featureIdDict:
+                            idList += [featureIdDict[ft]]
+                        else:
+                            idList += [featureIdDict['prev-word-UNK']]
+                    if i==nWords-1:
+                         idList += [featureIdDict['next-word-OMEGA']]
+                    else:
+                        ft = 'next-word-'+sent[i+1][0]
+                        if ft in featureIdDict:
+                            idList += [featureIdDict[ft]]
+                        else:
+                             idList += [featureIdDict['next-word-UNK']]
+                #POS
+                if features['POS']:
+                    ft = 'pos-'+pos
+                    if ft in featureIdDict:
+                        idList += [featureIdDict[ft]]
+                    else:
+                        idList += [featureIdDict['pos-UNKPOS']]
+                #POSCON
+                if features['POSCON']:
+                    if i==0:
+                        idList += [featureIdDict['prev-pos-PHIPOS']]
+                    else:
+                        ft = 'prev-pos-'+sent[i-1][1]
+                        if ft in featureIdDict:
+                            idList += [featureIdDict[ft]]
+                        else:
+                            idList += [featureIdDict['prev-pos-UNKPOS']]
+                    if i==nWords-1:
+                        idList += [featureIdDict['next-pos-OMEGAPOS']]
+                    else:
+                        ft = 'next-pos-'+sent[i+1][1]
+                        if ft in featureIdDict:
+                            idList += [featureIdDict[ft]]
+                        else:
+                            idList += [featureIdDict['next-pos-UNKPOS']]
+                #ABBR
+                if features['ABBR']:
+                    if word.replace('.','').isalpha() and word.upper()==word and len(word)<=4:
+                        idList += [featureIdDict['abbreviation']]
+                #CAP
+                if features['CAP']:
+                    if word[0].isalpha() and word[0]==word[0].upper():
+                        idList += [featureIdDict['capitalized']]
+                #TARGET
+                if features['TARGET']:
+                    if word in TBParts:
+                        idList += [featureIdDict['is-B-T']]
+                    if word in TIParts:
+                        idList += [featureIdDict['is-I-T']]
+                #WEAPON
+                if features['WEAPON']:
+                    if word in WBParts:
+                        idList += [featureIdDict['is-B-W']]
+                    if word in WIParts:
+                        idList += [featureIdDict['is-I-W']]
+                #INCIDENT
+                if features['INCIDENT']:
+                    idList += [featureIdDict['incident-'+incLs[docInd]]]
+                 
+                if isTrain:
+                    tmpVec += sorted(idList)
+                    vecs += [tmpVec]
+                    if isNonNeg:
+                        nonNegVecs += [tmpVec]
+                else:
+                    for id in sorted(idList):
+                        fOut.write(' '+str(id)+':1')
+                if isTrain and len(labels)>1:
+                    for l in labels[1:]:
+                        tmpVec = [labelIdDict[l]]
+                        tmpVec += sorted(idList)
+                        vecs += [tmpVec]
+                        nonNegVecs += [tmpVec]
+#                        fOut.write('\n'+str(labelIdDict[l]))
+#                        for id in sorted(idList):
+#                            fOut.write(' '+str(id)+':1')
+                elif not isTrain:
+                    isLastLine = (docInd==nDocs-1 and sentInd==nSents-1 and i==nWords-1)
+                    if not isLastLine:
+                        fOut.write('\n')
+
+    if isTrain:
+        nIns = len(vecs)
+        nNonNeg = len(nonNegVecs)
+        nShort = max(0, nIns - 2* nNonNeg)
+        nShort = 0
+        if nNonNeg!=0:
+            for i in range(nShort):
+                vecs+= [nonNegVecs[i%nNonNeg]]
+        nIns = len(vecs)
+        inds = numpy.random.permutation(nIns)
+        for ind, i in enumerate(inds):
+            vec = vecs[i]
+            fOut.write(str(vec[0]))
+            for id in vec[1:]:
+                fOut.write(' '+str(id)+':1')
+            if ind!= nIns-1:
+                fOut.write('\n')
+    fOut.close()    
+    return
+
+def doc2FtVec_short(tagWordsBIODict, features, featureIdDict, incLs,  possIncLs, roleT, isTrain=True, BParts=[], IParts=[]):
+
+    if isTrain:
+        fOut = open(roleT+"_BIO_vectors_tr.txt","w")
+    else:
+        fOut = open(roleT+"_BIO_vectors_tst.txt","w")
+    Btag = 'B-'+roleT
+    Itag = 'I-'+roleT
+    labelIdDict = {'O':0,Btag:1,Itag:2}
+    
+
+    nDocs = len(tagWordsBIODict)
+    if isTrain:
+        vecs = []
+        wordVecDict = dict()
+        nonNegWords = set()
+    for docInd, doc in enumerate(tagWordsBIODict):
+        nSents = len(doc)
+        for sentInd, sent in enumerate(doc):
+            nWords = len(sent)
+            for i, wPOSLab in enumerate(sent):
+                pos  = wPOSLab[1]
+                word = wPOSLab[0]
+                if isTrain:
+                    tmpVec = []
+                    labels = wPOSLab[2]
+#                    fOut.write(str(labelIdDict[labels[0]]))
+                    tmpVec += [labelIdDict[labels[0]]]
+                    if labels[0]!='O':
+                        nonNegWords.add(word)
+                else:
+                    fOut.write('0')
+                
+                idList=[]
+                #WORD
+                ft = 'word-'+word
+                if ft in featureIdDict:
+                    idList += [featureIdDict[ft]]
+                else:
+                    idList += [featureIdDict['word-UNK']]
+                #WORDCON
+                if features['WORDCON']:
+                    if i==0:
+                        idList += [featureIdDict['prev-word-PHI']]
+                    else:
+                        ft = 'prev-word-'+sent[i-1][0]
+                        if ft in featureIdDict:
+                            idList += [featureIdDict[ft]]
+                        else:
+                            idList += [featureIdDict['prev-word-UNK']]
+                    if i==nWords-1:
+                         idList += [featureIdDict['next-word-OMEGA']]
+                    else:
+                        ft = 'next-word-'+sent[i+1][0]
+                        if ft in featureIdDict:
+                            idList += [featureIdDict[ft]]
+                        else:
+                             idList += [featureIdDict['next-word-UNK']]
+                #POS
+                if features['POS']:
+                    ft = 'pos-'+pos
+                    if ft in featureIdDict:
+                        idList += [featureIdDict[ft]]
+                    else:
+                        idList += [featureIdDict['pos-UNKPOS']]
+                #POSCON
+                if features['POSCON']:
+                    if i==0:
+                        idList += [featureIdDict['prev-pos-PHIPOS']]
+                    else:
+                        ft = 'prev-pos-'+sent[i-1][1]
+                        if ft in featureIdDict:
+                            idList += [featureIdDict[ft]]
+                        else:
+                            idList += [featureIdDict['prev-pos-UNKPOS']]
+                    if i==nWords-1:
+                        idList += [featureIdDict['next-pos-OMEGAPOS']]
+                    else:
+                        ft = 'next-pos-'+sent[i+1][1]
+                        if ft in featureIdDict:
+                            idList += [featureIdDict[ft]]
+                        else:
+                            idList += [featureIdDict['next-pos-UNKPOS']]
+                #ABBR
+                if features['ABBR']:
+                    if word.replace('.','').isalpha() and word.upper()==word and len(word)<=4:
+                        idList += [featureIdDict['abbreviation']]
+                #CAP
+                if features['CAP']:
+                    if word[0].isalpha() and word[0]==word[0].upper():
+                        idList += [featureIdDict['capitalized']]
+                #TARGET
+                if features['TARGET']:
+                    if word in BParts:
+                        idList += [featureIdDict['is-B-T']]
+                    if word in IParts:
+                        idList += [featureIdDict['is-I-T']]
+                #WEAPON
+                if features['WEAPON']:
+                    if word in BParts:
+                        idList += [featureIdDict['is-B-W']]
+                    if word in IParts:
+                        idList += [featureIdDict['is-I-W']]
+                #INCIDENT
+                if features['INCIDENT']:
+                    idList += [featureIdDict['incident-'+incLs[docInd]]]
+                 
+                if isTrain:
+                    tmpVec += sorted(idList)
+                    vecs += [tmpVec]
+                    if word in wordVecDict:
+                        wordVecDict[word] += [tmpVec]
+                    else:
+                        wordVecDict[word] = [tmpVec]
+                else:
+                    for id in sorted(idList):
+                        fOut.write(' '+str(id)+':1')
+                if isTrain and len(labels)>1:
+                    for l in labels[1:]:
+                        tmpVec = [labelIdDict[l]]
+                        tmpVec += sorted(idList)
+                        wordVecDict[word] += [tmpVec]
+                        vecs += [tmpVec]
+#                        fOut.write('\n'+str(labelIdDict[l]))
+#                        for id in sorted(idList):
+#                            fOut.write(' '+str(id)+':1')
+                elif not isTrain:
+                    isLastLine = (docInd==nDocs-1 and sentInd==nSents-1 and i==nWords-1)
+                    if not isLastLine:
+                        fOut.write('\n')
+
+    if isTrain:
+        nIns = len(vecs)
+        nNonNeg = 0
+        for w in nonNegWords:
+            nNonNeg += len(wordVecDict[w])
+        nShort = max(0, nIns - 2* nNonNeg)
+        if nNonNeg != 0:
+            while nShort>0 and len(nonNegWords)>0:
+                tobeRemoved = set()
+                for w in nonNegWords:
+                    if len(wordVecDict[w])<=nShort:
+                        nShort -= len(wordVecDict[w])
+                        for v in wordVecDict[w]:
+                            vecs += [v]
+                    else:
+                        tobeRemoved.add(w)
+                nonNegWords -= tobeRemoved
+        nIns = len(vecs)
+        inds = numpy.random.permutation(nIns)
+        for ind, i in enumerate(inds):
+            vec = vecs[i]
+            fOut.write(str(vec[0]))
+            for id in vec[1:]:
+                fOut.write(' '+str(id)+':1')
+            if ind!= nIns-1:
+                fOut.write('\n')
+    fOut.close()    
+    return
+    
+def doc2FtVec_short_multi(tagWordsBIODict, features, featureIdDict, incLs,  possIncLs, roleTags, isTrain=True, WBParts=[], WIParts=[], TBParts=[], TIParts=[]):
+
+    if isTrain:
+        fOut = open("BIO_vectors_tr.txt","w")
+    else:
+        fOut = open("BIO_vectors_tst.txt","w")
+    labelIdDict = {'O':0}
+    id=1
+    for t in roleTags:
+        Btag = 'B-'+t
+        labelIdDict[Btag]=id
+        id+=1
+        Itag = 'I-'+t
+        labelIdDict[Itag]=id
+        id+=1
+    
+
+    nDocs = len(tagWordsBIODict)
+    if isTrain:
+        vecs = []
+        wordCountDict = dict()
+        nonNegWordVecDict = dict()
+    for docInd, doc in enumerate(tagWordsBIODict):
+        nSents = len(doc)
+        for sentInd, sent in enumerate(doc):
+            nWords = len(sent)
+            for i, wPOSLab in enumerate(sent):
+                pos  = wPOSLab[1]
+                word = wPOSLab[0]
+                if isTrain:
+                    tmpVec = []
+                    isNonNeg = False
+                    labels = wPOSLab[2]
+#                    fOut.write(str(labelIdDict[labels[0]]))
+                    tmpVec += [labelIdDict[labels[0]]]
+                    if labels[0]!='O':
+                        isNonNeg = True
+                else:
+                    fOut.write('0')
+                
+                idList=[]
+                #WORD
+                ft = 'word-'+word
+                if ft in featureIdDict:
+                    idList += [featureIdDict[ft]]
+                else:
+                    idList += [featureIdDict['word-UNK']]
+                #WORDCON
+                if features['WORDCON']:
+                    if i==0:
+                        idList += [featureIdDict['prev-word-PHI']]
+                    else:
+                        ft = 'prev-word-'+sent[i-1][0]
+                        if ft in featureIdDict:
+                            idList += [featureIdDict[ft]]
+                        else:
+                            idList += [featureIdDict['prev-word-UNK']]
+                    if i==nWords-1:
+                         idList += [featureIdDict['next-word-OMEGA']]
+                    else:
+                        ft = 'next-word-'+sent[i+1][0]
+                        if ft in featureIdDict:
+                            idList += [featureIdDict[ft]]
+                        else:
+                             idList += [featureIdDict['next-word-UNK']]
+                #POS
+                if features['POS']:
+                    ft = 'pos-'+pos
+                    if ft in featureIdDict:
+                        idList += [featureIdDict[ft]]
+                    else:
+                        idList += [featureIdDict['pos-UNKPOS']]
+                #POSCON
+                if features['POSCON']:
+                    if i==0:
+                        idList += [featureIdDict['prev-pos-PHIPOS']]
+                    else:
+                        ft = 'prev-pos-'+sent[i-1][1]
+                        if ft in featureIdDict:
+                            idList += [featureIdDict[ft]]
+                        else:
+                            idList += [featureIdDict['prev-pos-UNKPOS']]
+                    if i==nWords-1:
+                        idList += [featureIdDict['next-pos-OMEGAPOS']]
+                    else:
+                        ft = 'next-pos-'+sent[i+1][1]
+                        if ft in featureIdDict:
+                            idList += [featureIdDict[ft]]
+                        else:
+                            idList += [featureIdDict['next-pos-UNKPOS']]
+                #ABBR
+                if features['ABBR']:
+                    if word.replace('.','').isalpha() and word.upper()==word and len(word)<=4:
+                        idList += [featureIdDict['abbreviation']]
+                #CAP
+                if features['CAP']:
+                    if word[0].isalpha() and word[0]==word[0].upper():
+                        idList += [featureIdDict['capitalized']]
+                #TARGET
+                if features['TARGET']:
+                    if word in TBParts:
+                        idList += [featureIdDict['is-B-T']]
+                    if word in TIParts:
+                        idList += [featureIdDict['is-I-T']]
+                #WEAPON
+                if features['WEAPON']:
+                    if word in WBParts:
+                        idList += [featureIdDict['is-B-W']]
+                    if word in WIParts:
+                        idList += [featureIdDict['is-I-W']]
+                #INCIDENT
+                if features['INCIDENT']:
+                    idList += [featureIdDict['incident-'+incLs[docInd]]]
+                 
+                if isTrain:
+                    tmpVec += sorted(idList)
+                    vecs += [tmpVec]
+                    if word in wordCountDict:
+                        wordCountDict[word] += 1
+                    else:
+                        wordCountDict[word] = 1
+                    if isNonNeg:
+                        if word in nonNegWordVecDict:
+                            nonNegWordVecDict[word] += [tmpVec]
+                        else:
+                            nonNegWordVecDict[word] = [tmpVec]                        
+                else:
+                    for id in sorted(idList):
+                        fOut.write(' '+str(id)+':1')
+                if isTrain and len(labels)>1:
+                    for l in labels[1:]:
+                        tmpVec = [labelIdDict[l]]
+                        tmpVec += sorted(idList)
+                        wordCountDict[word] += 1
+                        nonNegWordVecDict[word] += [tmpVec]
+                        vecs += [tmpVec]
+#                        fOut.write('\n'+str(labelIdDict[l]))
+#                        for id in sorted(idList):
+#                            fOut.write(' '+str(id)+':1')
+                elif not isTrain:
+                    isLastLine = (docInd==nDocs-1 and sentInd==nSents-1 and i==nWords-1)
+                    if not isLastLine:
+                        fOut.write('\n')
+
+    if isTrain:
+        for w in nonNegWordVecDict:
+            nIns = wordCountDict[w]
+            nonNegIns = nonNegWordVecDict[w]
+            nNonNeg = len(nonNegIns)
+            nShort = max(0, nIns - 2* nNonNeg)
+            if nNonNeg != 0:
+                for i in range(nShort):
+                    vecs+= [nonNegIns[i%nNonNeg]]
         nIns = len(vecs)
         inds = numpy.random.permutation(nIns)
         for ind, i in enumerate(inds):

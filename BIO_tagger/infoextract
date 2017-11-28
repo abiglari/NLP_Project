@@ -1,3 +1,4 @@
+#!/bin/bash
 echo "Setting up the dependencies..."
 echo "Setting up pip for the correct version of python..."
 python get-pip.py
@@ -18,29 +19,12 @@ echo "Training a classifier to detect incident types..."
 echo "Predicting the incident types of the documents in the file" $1 "..."
 ./predict ../docWordVecs_tst.txt SVMPrimerClassifier ../predIncidents.txt > acc.txt
 cd ../
-echo "Running generator2.py ..." 
-python generator2.py
+echo "Running generator2_multi.py ..." 
+python generator2_multi.py
 cd liblinear-1.93
-echo "Training a classifier to detect WEAPON BIO tags (This may take a few minutes)..."
-./train -s 2 -e 0.0001  -c 1 -q ../W_BIO_vectors_tr.txt W_SVMPrimerClassifier
-echo "Training a classifier to detect PERP INDIV BIO tags (This may take a few minutes)..."
-./train -s 2 -e 0.0001  -c 1 -q ../PI_BIO_vectors_tr.txt PI_SVMPrimerClassifier
-echo "Training a classifier to detect PERP ORG BIO tags (This may take a few minutes)..."
-./train -s 2 -e 0.0001  -c 1 -q ../PO_BIO_vectors_tr.txt PO_SVMPrimerClassifier
-echo "Training a classifier to detect TARGET BIO tags (This may take a few minutes)..."
-./train -s 2 -e 0.0001  -c 1 -q ../T_BIO_vectors_tr.txt T_SVMPrimerClassifier
-echo "Training a classifier to detect VICTIM BIO tags (This may take a few minutes)..."
-./train -s 2 -e 0.0001  -c 1 -q ../V_BIO_vectors_tr.txt V_SVMPrimerClassifier
-echo "Predicting WEAPON BIO tags in the documents of the file" $1 "..."
-./predict ../W_BIO_vectors_tst.txt W_SVMPrimerClassifier ../predWs.txt > acc.txt
-echo "Predicting PERP INDIV BIO tags in the documents of the file" $1 "..."
-./predict ../PI_BIO_vectors_tst.txt PI_SVMPrimerClassifier ../predPIs.txt > acc.txt
-echo "Predicting PERP ORG BIO tags in the documents of the file" $1 "..."
-./predict ../PO_BIO_vectors_tst.txt PO_SVMPrimerClassifier ../predPOs.txt > acc.txt
-echo "Predicting TARGET BIO tags in the documents of the file" $1 "..."
-./predict ../T_BIO_vectors_tst.txt T_SVMPrimerClassifier ../predTs.txt > acc.txt
-echo "Predicting VICTIM BIO tags in the documents of the file" $1 "..."
-./predict ../V_BIO_vectors_tst.txt V_SVMPrimerClassifier ../predVs.txt > acc.txt
+echo "Training a multi-class classifier to detect WEAPON, TARGET, VICTIM, PERP INDIV and PERP ORG BIO tags (This may take a few minutes)..."
+./train -s 2 -e 0.0001  -c 1 -q ../BIO_vectors_tr.txt multi_SVMPrimerClassifier
+./predict ../BIO_vectors_tst.txt multi_SVMPrimerClassifier ../predBIOs.txt > acc.txt
 cd ../
-echo "Running generator3.py ..." 
-python generator3.py $1
+echo "Running generator3_multi.py ..." 
+python generator3_multi.py $1
