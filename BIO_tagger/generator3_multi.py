@@ -8,7 +8,7 @@ def main():
     inputFileName = inputFileName.split('/')
     inputFileName = inputFileName[-1]
     DT = TreebankWordDetokenizer()
-    print "Loading necessary python objects from the generator2.py python script..."
+    print "Loading necessary python objects from the generator2_multi.py python script..."
     with open('fromGen2.pickle') as f:
         roles, roleTags, IDs_tst, predIncLs, docSentsTagWords_tst = cPickle.load(f)
     assert(len(IDs_tst)==len(docSentsTagWords_tst) and len(IDs_tst)==len(predIncLs)),\

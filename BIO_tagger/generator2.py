@@ -21,6 +21,7 @@ def main():
     roleTags = ['W', 'PI', 'PO', 'T', 'V']    
     tagWordsBIODict = annotate(docSentsTagWords_tr, answers_tr, roles, roleTags)
 #    print tagWordsBIODict
+
     validFTypes = ['WORDCON','POS','POSCON','ABBR','CAP','TARGET', 'WEAPON', 'INCIDENT']
 
     featureIdDict = dict()

@@ -33,7 +33,7 @@ def main():
 
 #    print featureIdDict
 
-    print "Saving necessary python objects for the generator3.py python script..."
+    print "Saving necessary python objects for the generator3_multi.py python script..."
     with open('fromGen2.pickle', 'w') as f:
         cPickle.dump([roles, roleTags, IDs_tst, predIncLs, docSentsTagWords_tst], f)
     f.close()

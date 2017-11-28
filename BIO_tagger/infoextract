@@ -24,6 +24,7 @@ python generator2_multi.py
 cd liblinear-1.93
 echo "Training a multi-class classifier to detect WEAPON, TARGET, VICTIM, PERP INDIV and PERP ORG BIO tags (This may take a few minutes)..."
 ./train -s 2 -e 0.0001  -c 1 -q ../BIO_vectors_tr.txt multi_SVMPrimerClassifier
+echo "Predicting WEAPON, TARGET, VICTIM, PERP INDIV and PERP ORG BIO tags in the documents of the file" $1 "..."
 ./predict ../BIO_vectors_tst.txt multi_SVMPrimerClassifier ../predBIOs.txt > acc.txt
 cd ../
 echo "Running generator3_multi.py ..." 
